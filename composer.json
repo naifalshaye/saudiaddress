@@ -1,0 +1,14 @@
+{
+    "name": "naif/saudiaddress",
+    "description": "Saudi Address is a laravel package that help you with validating Saudi Address, GeoCode a location to retreive address details and some lookups tthat you can call to get Regions, Citites and Districts.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Naif Alshaye",
+            "email": "naif@naif.io"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
