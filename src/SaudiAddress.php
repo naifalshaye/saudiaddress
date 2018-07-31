@@ -2,24 +2,21 @@
 
 namespace Naif\Saudiaddress;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+class SaudiAddress{
 
-class AddressController extends Controller
-{
+    public function regions(){
+        return 'regions list';
+    }
+
     public function geoCode($lat, $lng){
         return [$lat,$lng];
     }
 
-    public function verify(Request $request)
+    public function verify($bulding_number, $zip_code, $additional_code)
     {
-        return $request->all();
+        return [$bulding_number,$zip_code,$additional_code];
     }
 
-    public function regions()
-    {
-        return 'regions';
-    }
 
     public function cities($region_id)
     {
@@ -30,5 +27,4 @@ class AddressController extends Controller
     {
         return $city_id;
     }
-
 }

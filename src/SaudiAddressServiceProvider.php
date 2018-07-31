@@ -13,7 +13,7 @@ class SaudiAddressServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        include __DIR__.'/routes.php';
+
     }
 
     /**
@@ -23,6 +23,8 @@ class SaudiAddressServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->make('Naif\Saudiaddress\AddressController');
+        $this->app->bind('saudi-address', function(){
+            return new SaudiAddress();
+        });
     }
 }
