@@ -4,27 +4,66 @@ namespace Naif\Saudiaddress;
 
 class SaudiAddress{
 
-    public function regions(){
-        return 'regions list';
+    /**
+     * @param string $lang
+     * @return mixed
+     */
+    public function regions($lang = 'A'){
+        $response = file_get_contents(config('SaudiAddress.url') . '/lookup/regions?language=' . $lang . '&format=JSON&api_key=' . config('SaudiAddress.api_key'));
+        $response = iconv('windows-1256', 'utf-8', ($response));
+        $response = json_decode($response);
+        return $response->Regions;
     }
 
-    public function geoCode($lat, $lng){
-        return [$lat,$lng];
-    }
-
-    public function verify($bulding_number, $zip_code, $additional_code)
+    /**
+     * @param $region_id
+     * @param string $lang
+     * @return mixed
+     */
+    public function cities($region_id, $lang = 'A')
     {
-        return [$bulding_number,$zip_code,$additional_code];
+        $response = file_get_contents(config('SaudiAddress.url').'/lookup/cities?regionid='.$region_id.'&language='.$lang.'&format=JSON&api_key='.config('SaudiAddress.api_key'));
+        $response = iconv('windows-1256', 'utf-8', ($response));
+        $response = json_decode($response);
+        return $response->Cities;
     }
 
-
-    public function cities($region_id)
-    {
-        return $region_id;
+    /**
+     * @param $city_id
+     * @param string $lang
+     * @return mixed
+     */
+    public function districts($city_id, $lang = 'A') {
+        $response = file_get_contents(config('SaudiAddress.url').'/lookup/districts?cityid='.$city_id.'&language='.$lang.'&format=JSON&api_key='.config('SaudiAddress.api_key'));
+        $response = iconv('windows-1256', 'utf-8', ($response));
+        $response = json_decode($response);
+        return $response->Districts;
     }
 
-    public function districts($city_id)
-    {
-        return $city_id;
+    /**
+     * @param $lat
+     * @param $lng
+     * @param string $lang
+     * @return mixed
+     */
+    public function geoCode($lat, $lng, $lang = 'A'){
+        $response = file_get_contents(config('SaudiAddress.url').'/Address/address-geocode?lat='.$lat.'&long='.$lng.'&language='.$lang.'&format=JSON&api_key='.config('SaudiAddress.api_key'));
+        $response = iconv('windows-1256', 'utf-8', ($response));
+        $response = json_decode($response);
+        return $response->Addresses[0];
+    }
+
+    /**
+     * @param $bulding_number
+     * @param $post_code
+     * @param $additional_number
+     * @param string $lang
+     * @return mixed
+     */
+    public function verify($bulding_number, $post_code, $additional_number, $lang = 'A') {
+        $response = file_get_contents(env('SAUDI_ADDRESS_API_URL').'/Address/address-verify?buildingnumber='.$bulding_number.'&zipcode='.$post_code.'&additionalnumber='.$additional_number.'&language='.$lang.'&format=JSON&api_key='.env('SAUDI_ADDRESS_API_KEY'));
+        $response = iconv('windows-1256', 'utf-8', ($response));
+        $response = json_decode($response);
+        return $response->addressfound;
     }
 }

@@ -23,6 +23,10 @@ class SaudiAddressServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__ . '/config/saudiaddress.php', 'SaudiAddress'
+        );
+
         $this->app->bind('saudi-address', function(){
             return new SaudiAddress();
         });
