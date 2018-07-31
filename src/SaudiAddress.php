@@ -20,7 +20,7 @@ class SaudiAddress{
      * @param string $lang
      * @return mixed
      */
-    public function cities($region_id, $lang = 'A')
+    public function cities($region_id = -1, $lang = 'A')
     {
         $response = file_get_contents(config('SaudiAddress.url').'/lookup/cities?regionid='.$region_id.'&language='.$lang.'&format=JSON&api_key='.config('SaudiAddress.api_key'));
         $response = iconv('windows-1256', 'utf-8', ($response));

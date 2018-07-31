@@ -10,5 +10,11 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {}
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Naif\\Saudiaddress\\": "src/"
+        }
+    }
 }
+s
