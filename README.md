@@ -73,7 +73,7 @@ Response:
 Get a list of districts within a city (by city id)
 
 ```
-SaudiAddress::districts(1);
+$districts = SaudiAddress::districts(1);
 
 Response:
 [
@@ -151,5 +151,8 @@ Response:
 
 true/false
 ```
-
-
+To get results in English, just pass 'E' as a last paramater.
+Example
+```
+$districts = SaudiAddress::districts(1,'E');
+```
