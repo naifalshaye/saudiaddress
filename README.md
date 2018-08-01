@@ -143,7 +143,7 @@ Response:
   ]
 ```
 
-Verify an address by (bulding No, PostCode, Additionsl No)
+Verify an address by (Bulding No, PostCode, Additional No)
 ```
 $verify = SaudiAddress::verify(7596,13216,2802);
 
@@ -152,4 +152,4 @@ Response:
 true/false
 ```
 
-  
+
