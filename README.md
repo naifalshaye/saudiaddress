@@ -156,8 +156,7 @@ Example
 ```
 $districts = SaudiAddress::districts(1,'E');
 ```
+## Support:
+naif@naif.io
 
-## Support
-naif(at)naif.io
-
-https://www.linkedin.com/in/naif-alshaye-90b143124/
+https://www.linkedin.com/in/naif
