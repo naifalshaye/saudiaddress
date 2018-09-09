@@ -160,3 +160,7 @@ $districts = SaudiAddress::districts(1,'E');
 naif@naif.io
 
 https://www.linkedin.com/in/naif
+
+## License
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+
