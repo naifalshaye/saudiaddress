@@ -5,7 +5,7 @@
 composer require naif/saudiaddress
 ```
 
-Add service provider and alias to config/app.php
+If your Laravel below 5.5 you need to add service provider and alias to config/app.php
 ```
 Naif\Saudiaddress\SaudiAddressServiceProvider::class,
 'SaudiAddress' => Naif\Saudiaddress\Facades\SaudiAddress::class,
