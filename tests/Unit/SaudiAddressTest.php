@@ -403,4 +403,492 @@ class SaudiAddressTest extends TestCase
         $this->expectExceptionMessage('Invalid language [a]');
         $service->regions('a');
     }
+
+    // ---------------------------------------------------------------
+    // encode=utf8 in all requests
+    // ---------------------------------------------------------------
+
+    public function testEncodeUtf8SentInAllRequests()
+    {
+        $body = json_encode(['Regions' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->regions();
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('utf8', $params['encode']);
+    }
+
+    public function testEncodeUtf8SentInShortAddressRequests()
+    {
+        $body = json_encode(['Addresses' => [['BuildingNumber' => '1']]]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->shortAddress('ABCD1234');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('utf8', $params['encode']);
+    }
+
+    // ---------------------------------------------------------------
+    // freeTextSearch()
+    // ---------------------------------------------------------------
+
+    public function testFreeTextSearchReturnsAddresses()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['BuildingNumber' => '1234', 'Street' => 'King Fahd'],
+                ['BuildingNumber' => '5678', 'Street' => 'Olaya'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->freeTextSearch('Riyadh');
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(2, $result);
+    }
+
+    public function testFreeTextSearchSendsCorrectParams()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->freeTextSearch('Riyadh', 2, 'E');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('Riyadh', $params['addressstring']);
+        $this->assertEquals('2', $params['page']);
+        $this->assertEquals('E', $params['language']);
+    }
+
+    // ---------------------------------------------------------------
+    // fixedSearch()
+    // ---------------------------------------------------------------
+
+    public function testFixedSearchReturnsAddresses()
+    {
+        $body = json_encode([
+            'Addresses' => [['BuildingNumber' => '1234']],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->fixedSearch(['CityId' => 3]);
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testFixedSearchSendsCorrectParams()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->fixedSearch(['CityId' => 3, 'ZipCode' => 13216], 2, 'E');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('3', $params['CityId']);
+        $this->assertEquals('13216', $params['ZipCode']);
+        $this->assertEquals('2', $params['page']);
+        $this->assertEquals('E', $params['language']);
+    }
+
+    // ---------------------------------------------------------------
+    // bulkSearch()
+    // ---------------------------------------------------------------
+
+    public function testBulkSearchReturnsAddresses()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['BuildingNumber' => '1234'],
+                ['BuildingNumber' => '5678'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->bulkSearch(['Riyadh', 'Jeddah']);
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(2, $result);
+    }
+
+    public function testBulkSearchFormatsAddressString()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->bulkSearch(['Riyadh', 'Jeddah', 'Dammam']);
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('Riyadh | ; Jeddah | ; Dammam', $params['addressstring']);
+    }
+
+    public function testBulkSearchRejectsMoreThan10Addresses()
+    {
+        $service = $this->createService([]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('maximum of 10 addresses');
+        $service->bulkSearch(array_fill(0, 11, 'address'));
+    }
+
+    // ---------------------------------------------------------------
+    // shortAddress()
+    // ---------------------------------------------------------------
+
+    public function testShortAddressReturnsAddresses()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['BuildingNumber' => '7596', 'City' => 'Riyadh'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->shortAddress('ABCD1234');
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testShortAddressUsesCorrectEndpoint()
+    {
+        $body = json_encode([
+            'Addresses' => [['BuildingNumber' => '1']],
+        ]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->shortAddress('ABCD1234');
+
+        $uri = (string) $history[0]['request']->getUri();
+        $this->assertStringContainsString('/NationalAddressByShortAddress/NationalAddressByShortAddress', $uri);
+        $this->assertStringNotContainsString('/NationalAddress/v3.1', $uri);
+    }
+
+    public function testShortAddressValidatesFormat()
+    {
+        $service = $this->createService([]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid short address');
+        $service->shortAddress('INVALID');
+    }
+
+    public function testShortAddressThrowsNotFoundForEmptyResults()
+    {
+        $body = json_encode(['Addresses' => []]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+
+        $this->expectException(AddressNotFoundException::class);
+        $this->expectExceptionMessage('short address [ABCD1234]');
+        $service->shortAddress('ABCD1234');
+    }
+
+    // ---------------------------------------------------------------
+    // verifyShortAddress()
+    // ---------------------------------------------------------------
+
+    public function testVerifyShortAddressReturnsTrue()
+    {
+        $body = json_encode([
+            'Addresses' => [['BuildingNumber' => '1']],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->verifyShortAddress('ABCD1234');
+
+        $this->assertTrue($result);
+    }
+
+    public function testVerifyShortAddressReturnsFalse()
+    {
+        $body = json_encode(['Addresses' => []]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->verifyShortAddress('ZZZZ9999');
+
+        $this->assertFalse($result);
+    }
+
+    // ---------------------------------------------------------------
+    // poiFreeTextSearch()
+    // ---------------------------------------------------------------
+
+    public function testPoiFreeTextSearchReturnsResults()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['ServiceName' => 'Hospital'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->poiFreeTextSearch('hospital');
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testPoiFreeTextSearchSendsCorrectParams()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->poiFreeTextSearch('hospital', 2, 'E');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('hospital', $params['servicestring']);
+        $this->assertEquals('2', $params['page']);
+        $this->assertEquals('E', $params['language']);
+    }
+
+    // ---------------------------------------------------------------
+    // poiFixedSearch()
+    // ---------------------------------------------------------------
+
+    public function testPoiFixedSearchReturnsResults()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['ServiceName' => 'School'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->poiFixedSearch('school', 1);
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testPoiFixedSearchSendsRegionId()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->poiFixedSearch('school', 5, ['CityId' => 3]);
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('school', $params['servicestring']);
+        $this->assertEquals('5', $params['regionid']);
+        $this->assertEquals('3', $params['CityId']);
+    }
+
+    // ---------------------------------------------------------------
+    // nearestPoi()
+    // ---------------------------------------------------------------
+
+    public function testNearestPoiReturnsResults()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['ServiceName' => 'Pharmacy'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->nearestPoi(24.774265, 46.738586);
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testNearestPoiSendsRadiusParam()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->nearestPoi(24.774265, 46.738586, 2.0);
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('24.774265', $params['lat']);
+        $this->assertEquals('46.738586', $params['long']);
+        $this->assertEquals('2', $params['radius']);
+    }
+
+    public function testNearestPoiUsesDefaultRadius()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->nearestPoi(24.774265, 46.738586);
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('0.5', $params['radius']);
+    }
+
+    // ---------------------------------------------------------------
+    // serviceCategories()
+    // ---------------------------------------------------------------
+
+    public function testServiceCategoriesReturnsArray()
+    {
+        $body = json_encode([
+            'ServiceCategories' => [
+                ['Id' => 1, 'Name' => 'Health'],
+                ['Id' => 2, 'Name' => 'Education'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->serviceCategories();
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(2, $result);
+    }
+
+    // ---------------------------------------------------------------
+    // serviceSubCategories()
+    // ---------------------------------------------------------------
+
+    public function testServiceSubCategoriesReturnsArray()
+    {
+        $body = json_encode([
+            'ServiceSubCategories' => [
+                ['Id' => 10, 'Name' => 'Hospital'],
+                ['Id' => 11, 'Name' => 'Clinic'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->serviceSubCategories(1);
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(2, $result);
+    }
+
+    public function testServiceSubCategoriesSendsCategoryId()
+    {
+        $body = json_encode(['ServiceSubCategories' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->serviceSubCategories(5, 'E');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('5', $params['servicecategoryid']);
+        $this->assertEquals('E', $params['language']);
+    }
+
+    // ---------------------------------------------------------------
+    // sendOtp()
+    // ---------------------------------------------------------------
+
+    public function testSendOtpReturnsResponse()
+    {
+        $body = json_encode([
+            'Status' => 'Success',
+            'Message' => 'OTP sent',
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->sendOtp('STORE001', '0501234567');
+
+        $this->assertTrue(is_object($result));
+        $this->assertEquals('Success', $result->Status);
+    }
+
+    public function testSendOtpSendsCorrectParams()
+    {
+        $body = json_encode(['Status' => 'Success']);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->sendOtp('STORE001', '0501234567');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('STORE001', $params['StoreId']);
+        $this->assertEquals('0501234567', $params['MobileNo']);
+    }
+
+    // ---------------------------------------------------------------
+    // addressByPhone()
+    // ---------------------------------------------------------------
+
+    public function testAddressByPhoneReturnsAddresses()
+    {
+        $body = json_encode([
+            'Addresses' => [
+                ['BuildingNumber' => '1234', 'City' => 'Riyadh'],
+            ],
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->addressByPhone('STORE001', '0501234567', '1234');
+
+        $this->assertTrue(is_array($result));
+        $this->assertCount(1, $result);
+    }
+
+    public function testAddressByPhoneSendsCorrectParams()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->addressByPhone('STORE001', '0501234567', '9876');
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('STORE001', $params['StoreId']);
+        $this->assertEquals('0501234567', $params['MobileNo']);
+        $this->assertEquals('9876', $params['PinCode']);
+    }
+
+    // ---------------------------------------------------------------
+    // featureExtents()
+    // ---------------------------------------------------------------
+
+    public function testFeatureExtentsReturnsObject()
+    {
+        $body = json_encode([
+            'xmin' => 34.5,
+            'ymin' => 16.3,
+            'xmax' => 55.6,
+            'ymax' => 32.1,
+        ]);
+
+        $service = $this->createService([new Response(200, [], $body)]);
+        $result = $service->featureExtents('regions', '1');
+
+        $this->assertTrue(is_object($result));
+        $this->assertEquals(34.5, $result->xmin);
+    }
+
+    public function testFeatureExtentsValidatesLayerName()
+    {
+        $service = $this->createService([]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid layer name [invalid]');
+        $service->featureExtents('invalid', '1');
+    }
+
+    // ---------------------------------------------------------------
+    // Pagination param in search requests
+    // ---------------------------------------------------------------
+
+    public function testPaginationParamSentInSearchRequests()
+    {
+        $body = json_encode(['Addresses' => []]);
+        $history = [];
+
+        $service = $this->createService([new Response(200, [], $body)], $history);
+        $service->freeTextSearch('test', 3);
+
+        $params = $this->getQueryParams($history);
+        $this->assertEquals('3', $params['page']);
+    }
 }

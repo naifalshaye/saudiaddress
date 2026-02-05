@@ -104,4 +104,11 @@ class ExceptionsTest extends TestCase
         $this->assertStringContainsString('24.774265', $e->getMessage());
         $this->assertStringContainsString('46.738586', $e->getMessage());
     }
+
+    public function testAddressNotFoundExceptionContainsShortAddress()
+    {
+        $e = AddressNotFoundException::forShortAddress('ABCD1234');
+        $this->assertStringContainsString('ABCD1234', $e->getMessage());
+        $this->assertStringContainsString('short address', $e->getMessage());
+    }
 }

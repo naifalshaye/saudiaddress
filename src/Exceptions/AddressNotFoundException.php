@@ -15,4 +15,15 @@ class AddressNotFoundException extends SaudiAddressException
             sprintf('No address found for coordinates [%s, %s].', $lat, $lng)
         );
     }
+
+    /**
+     * @param string $shortAddress
+     * @return static
+     */
+    public static function forShortAddress(string $shortAddress)
+    {
+        return new static(
+            sprintf('No address found for short address [%s].', $shortAddress)
+        );
+    }
 }

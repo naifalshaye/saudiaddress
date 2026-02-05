@@ -2,6 +2,25 @@
 
 All notable changes to this package will be documented in this file.
 
+## [2.1.0] - 2026-02-05
+
+### Added
+- **Address Search**: `freeTextSearch()`, `fixedSearch()`, `bulkSearch()` — search addresses by free text, fixed parameters, or up to 10 addresses in bulk
+- **Short Address**: `shortAddress()`, `verifyShortAddress()` — look up and verify national short address codes (4 letters + 4 digits format)
+- **POI / Points of Interest**: `poiFreeTextSearch()`, `poiFixedSearch()`, `nearestPoi()` — search for points of interest by text, parameters, or proximity
+- **Lookups**: `serviceCategories()`, `serviceSubCategories()` — get POI service category data
+- **Address By Phone**: `sendOtp()`, `addressByPhone()` — OTP-based address lookup by phone number
+- **Utilities**: `featureExtents()` — get geographic extents for regions, cities, districts, streets, or zipcodes
+- `AddressNotFoundException::forShortAddress()` factory method
+- `encode=utf8` parameter sent in all API requests for proper UTF-8 responses
+- `requestAbsolute()` internal method for endpoints outside the v3.1 base path
+- Short address format validation (4 letters + 4 digits)
+- Layer name validation for `featureExtents()`
+- Bulk search limit validation (max 10 addresses)
+- Pagination support (`$page` parameter) on all search endpoints
+- PHPDoc `@method` annotations on Facade for all 13 new methods
+- 27 new tests (71 total, 128 assertions)
+
 ## [2.0.0] - 2026-02-05
 
 ### Added
