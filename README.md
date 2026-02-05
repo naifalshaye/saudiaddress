@@ -1,166 +1,161 @@
-# PHP Laravel wrapper for the Saudi National Address APIs
+# Saudi Address - Laravel Package
+
+Laravel wrapper for the [Saudi National Address APIs](https://api.address.gov.sa/).
+
+## Requirements
+
+- PHP >= 7.2
+- Laravel 5.5 - 12.x
 
 ## Installation
-```
+
+```bash
 composer require naif/saudiaddress
 ```
 
-If your Laravel below 5.5 you need to add service provider and alias to config/app.php
-```
-Naif\Saudiaddress\SaudiAddressServiceProvider::class,
-'SaudiAddress' => Naif\Saudiaddress\Facades\SaudiAddress::class,
-```
-## API KEYS
-Obtain your National Address API key from https://api.address.gov.sa/
+**Laravel 5.5+** uses auto-discovery, so the service provider and facade are registered automatically.
 
-Add these to your .env
+For **Laravel < 5.5**, add to `config/app.php`:
+
+```php
+'providers' => [
+    Naif\Saudiaddress\SaudiAddressServiceProvider::class,
+],
+
+'aliases' => [
+    'SaudiAddress' => Naif\Saudiaddress\Facades\SaudiAddress::class,
+],
+```
+
+## Configuration
+
+### API Key
+
+Get your API key from [https://api.address.gov.sa/](https://api.address.gov.sa/) and add it to your `.env`:
+
+```
+SAUDI_ADDRESS_API_KEY=your-api-key-here
+```
+
+The default API URL is already configured. Override it only if needed:
+
 ```
 SAUDI_ADDRESS_API_URL=https://apina.address.gov.sa/NationalAddress/v3.1
-SAUDI_ADDRESS_API_KEY=XXXXXXXXXXXXXXXXX
 ```
+
+### Optional Settings
+
+```
+SAUDI_ADDRESS_LANGUAGE=A        # Default language: A (Arabic) or E (English)
+SAUDI_ADDRESS_TIMEOUT=30        # HTTP timeout in seconds
+```
+
+### Publish Config
+
+To customize the configuration file:
+
+```bash
+php artisan vendor:publish --tag=saudiaddress-config
+```
+
 ## Usage
 
-Get a list of regions
-```
+### Get Regions
+
+```php
+use Naif\Saudiaddress\Facades\SaudiAddress;
+
 $regions = SaudiAddress::regions();
 
-Response:
-[
-  0 => {#181
-    +"Id": "12"
-    +"Name": " الباحة"
-  }
-  1 => {#182
-    +"Id": "13"
-    +"Name": " الجوف"
-  }
-  2 => {#188
-    +"Id": "9"
-    +"Name": " الحدود الشمالية"
-  }
-  3 => {#189
-    +"Id": "1"
-    +"Name": " الرياض"
-  }
-]
+// In English
+$regions = SaudiAddress::regions('E');
 ```
-Get a list of cities within a region (by region id)
-* To get a list of all cities don't pass a region id
-```
+
+### Get Cities
+
+```php
+// All cities
+$cities = SaudiAddress::cities();
+
+// Cities in a specific region
 $cities = SaudiAddress::cities(1);
 
-Response:
-[
-  0 => {#183
-    +"Id": "3"
-    +"Name": "الرياض"
-  }
-  1 => {#189
-    +"Id": "1061"
-    +"Name": "الخرج"
-  }
-  2 => {#190
-    +"Id": "828"
-    +"Name": "الدرعية"
-  }
-  3 => {#191
-    +"Id": "669"
-    +"Name": "الدوادمي"
-  }
-]
+// In English
+$cities = SaudiAddress::cities(1, 'E');
 ```
 
-Get a list of districts within a city (by city id)
+### Get Districts
 
-```
-$districts = SaudiAddress::districts(1);
+```php
+// Districts within a city
+$districts = SaudiAddress::districts(3);
 
-Response:
-[
-  0 => {#184
-    +"Id": "10700001041"
-    +"Name": "اسكان قوى الامن العام"
-  }
-  1 => {#190
-    +"Id": "10700001018"
-    +"Name": "حي ابو سبعة"
-  }
-  2 => {#191
-    +"Id": "10700001021"
-    +"Name": "حي البساتين"
-  }
-  3 => {#192
-    +"Id": "10700001030"
-    +"Name": "حي الخالدية"
-  }
-  4 => {#193
-    +"Id": "10700001044"
-    +"Name": "حي الرابية"
-  }
-  5 => {#194
-    +"Id": "10700001012"
-    +"Name": "حي الروضة"
-  }
-]
+// In English
+$districts = SaudiAddress::districts(3, 'E');
 ```
 
-Geocode, to get address details by geo location (latitude,longitude)
-```
-$address = SaudiAddress::geoCode(24.774265,46.738586);
+### Reverse Geocode
 
-Response:
-[
-  +"Title": null
-  +"Address1": "7596 الديوان - Al Hamra Dist.,حي الحمراء"
-  +"Address2": "RIYADH,الرياض 13216 - 2802"
-  +"ObjLatLng": "1"
-  +"BuildingNumber": "7596"
-  +"Street": "الديوان"
-  +"District": "Al Hamra Dist.,حي الحمراء"
-  +"City": "RIYADH,الرياض"
-  +"PostCode": "13216"
-  +"AdditionalNumber": "2802"
-  +"RegionName": "منطقة الرياض"
-  +"PolygonString": null
-  +"IsPrimaryAddress": null
-  +"UnitNumber": null
-  +"Latitude": null
-  +"Longitude": null
-  +"CityId": "3"
-  +"RegionId": null
-  +"Restriction": "Null"
-  +"PKAddressID": null
-  +"DistrictID": null
-  +"Title_L2": null
-  +"RegionName_L2": null
-  +"City_L2": null
-  +"Street_L2": null
-  +"District_L2": null
-  +"CompanyName_L2": null
-  +"GovernorateID": null
-  +"Governorate": null
-  +"Governorate_L2": null
-  ]
+Get address details from latitude/longitude coordinates:
+
+```php
+$address = SaudiAddress::geoCode(24.774265, 46.738586);
+
+// Access properties
+echo $address->BuildingNumber; // "7596"
+echo $address->Street;         // "الديوان"
+echo $address->District;       // "Al Hamra Dist.,حي الحمراء"
+echo $address->City;           // "RIYADH,الرياض"
+echo $address->PostCode;       // "13216"
 ```
 
-Verify an address by (Bulding No, PostCode, Additional No)
-```
-$verify = SaudiAddress::verify(7596,13216,2802);
+### Verify Address
 
-Response:
+Verify an address by building number, postal code, and additional number:
 
-true/false
-```
-To get results in English, just pass 'E' as a last paramater.
-Example
-```
-$districts = SaudiAddress::districts(1,'E');
-```
-## Support:
-naif@naif.io
+```php
+$isValid = SaudiAddress::verify(7596, 13216, 2802);
 
-https://www.linkedin.com/in/naif
+if ($isValid) {
+    echo 'Address is valid!';
+}
+```
+
+## Error Handling
+
+All methods throw typed exceptions that extend `SaudiAddressException`:
+
+```php
+use Naif\Saudiaddress\Exceptions\SaudiAddressException;
+use Naif\Saudiaddress\Exceptions\ApiRequestException;
+use Naif\Saudiaddress\Exceptions\InvalidResponseException;
+use Naif\Saudiaddress\Exceptions\AddressNotFoundException;
+use Naif\Saudiaddress\Exceptions\InvalidConfigurationException;
+
+try {
+    $address = SaudiAddress::geoCode(24.774265, 46.738586);
+} catch (AddressNotFoundException $e) {
+    // No address found at these coordinates
+} catch (ApiRequestException $e) {
+    // Network error or API returned an error
+} catch (InvalidResponseException $e) {
+    // API returned unexpected data
+} catch (SaudiAddressException $e) {
+    // Catch-all for any Saudi Address related error
+}
+```
+
+## Testing
+
+```bash
+composer test
+```
+
+## Support
+
+- Author: Naif Alshaye (naif@naif.io)
+- LinkedIn: [https://www.linkedin.com/in/naif](https://www.linkedin.com/in/naif)
 
 ## License
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
